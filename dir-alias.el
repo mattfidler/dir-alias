@@ -107,7 +107,10 @@ The appropriate line is added to `file-name-handler-alist'."
 				     (lambda(x)
 				       `(,(concat "\\`" (regexp-quote (replace-regexp-in-string "[/]*$" "/" (cdr x)))) . ,(concat "~" (car x) "/")))
 				     dir-alias--dirs-assoc))
-				(lambda(x1 x2) (> (length (car x1)) (length (car x2)))))))
+				(lambda(x1 x2) (cond
+						((= (length (car x1)) (length (car x2)))
+						 (< (length (cdr x1)) (length (cdr x2))))
+						(t (> (length (car x1)) (length (car x2)))))))))
 
 (define-minor-mode dir-alias-mode
   "Enable directory aliaes."
@@ -223,11 +226,15 @@ When completed, the dir-alias variables if the mode is enabled by
 (dir-alias-env "mydoc"
 	       "temp"
 	       "ProgramData"
+	       '("pd" "ProgramData")
 	       "ProgramFiles"
+	       '("pf" "ProgramFiles")
 	       "userprofile"
+	       '("up" "userprofile")
 	       "appdata"
-	       "homepath"
+	       ;; "homepath"
 	       "systemroot"
+	       '("win" "systemroot")
 	       "localappdata"
 	       '("h" "ohome"))
 

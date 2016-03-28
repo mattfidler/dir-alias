@@ -1,0 +1,50 @@
+#+TITLE: dir-alias: Create emacs specific directory shortcuts
+#+AUTHOR: Matthew L. Fidler
+
+This was originally made for EmacsPortable.App, and used to help
+figure out the correct directories between operating systems because
+the usb drive gets mounted to different places. It is a convenient
+shortcut facility for directories.
+   
+* EmcasPortable.App specific shortcuts
+When using EmacsPortable.App, the following directories aliaes are setup:
+|-------------+------------------------------+-------------------------------------|
+| Alias       | True Directory               | Directory Purpose                   |
+|-------------+------------------------------+-------------------------------------|
+| ~ahk/       | Other/source/ahk             | AHK Sources Directory               |
+| ~app/       | App/                         | EmacsPortable.App Application Files |
+| ~ep/        | .                            | EmacsPortable.App Directory         |
+| ~ini/       | Data/ini                     | EmacsPortable.App ini files         |
+| ~nsi/       | Other/source/nsi             | NSIS Sources Directory              |
+| ~pa/        | USB Drive:/PortableApps      | Portable Apps                       |
+| ~shared/    | Data/start/shared            | Shared Customizations               |
+| ~site-lisp/ | App/site-lisp                | Site Lisp Directory                 |
+| ~src/       | Data/src                     | EmacsPortable.App lisp source files |
+| ~start/     | Data/start                   | EmacsPortable.App Customizations    |
+| ~system/    | Data/start/system            | System-based Customizations         |
+| ~usb/       | USB Drive                    | USB Drive                           |
+| ~user/      | Data/start/user              | User-based Customizations           |
+| ~h/         | System Home Directory        | System Home Directory               |
+|-------------+------------------------------+-------------------------------------|
+
+In addition to these aliases, the following aliases are also defined:
+
+
+*  General shortcuts
+Other aliases are added =~el-get/package/elpa= is changed to =~elpa=, as
+if it were a symbolic link.  Since symbolic links are not supported in
+windows, this is handled by emacs only.  This was implemented to allow
+files to remain the same between file systems.  =~usb/= will be the
+same on every system.
+
+In addition to these aliases, the following aliases are also defined:
+
+- =~el-get=, is an alias for the el-get package directory
+- =~elpa=, is an alias for the user elpa package directory
+- =~theme= or =~themes=, is an alias for the emacs24 themes directory,
+  (as long as the themes directory is /not/ the =user-emacs-directory=).
+- =~snip=, =~snips=, =~snippets=, =~snippet=, is an alias for
+  yasnippets snippets.
+- All the startup scripts in =Data/start= have an alias created for them.
+
+
