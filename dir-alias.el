@@ -101,11 +101,13 @@ The appropriate line is added to `file-name-handler-alist'."
 				    dir-alias--dirs-assoc) 'paren))
 	file-name-handler-alist (cl-remove-if (lambda(x) (eq (cdr x) 'dir-alias--file-name-handler)) file-name-handler-alist)
 	file-name-handler-alist (cons `(,dir-alias--regexp . dir-alias--file-name-handler) file-name-handler-alist)
-	directory-abbrev-alist `((,(dir-alias--ensure-last-slash (expand-file-name (getenv "HOME"))) . "~/")
-				 ,@(mapcar
-				    (lambda(x)
-				      `(,(concat "\\`" (regexp-quote (replace-regexp-in-string "[/]*$" "/" (cdr x)))) . ,(concat "~" (car x) "/")))
-				    dir-alias--dirs-assoc))))
+	directory-abbrev-alist (cl-sort
+				`((,(concat "\\`" (regexp-quote (dir-alias--ensure-last-slash (expand-file-name (getenv "HOME"))))) . "~/")
+				  ,@(mapcar
+				     (lambda(x)
+				       `(,(concat "\\`" (regexp-quote (replace-regexp-in-string "[/]*$" "/" (cdr x)))) . ,(concat "~" (car x) "/")))
+				     dir-alias--dirs-assoc))
+				(lambda(x1 x2) (> (length (car x1)) (length (car x2)))))))
 
 (define-minor-mode dir-alias-mode
   "Enable directory aliaes."
