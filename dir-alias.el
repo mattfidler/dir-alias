@@ -174,8 +174,11 @@ When completed, the dir-alias variables if the mode is enabled by
 
 (defun dir-alias-env--1 (env)
   "Create a directory alias of ENV environmental variable."
-  (let* ((env-name (upcase env))
-	 (alias-name (downcase env))
+  (let* ((env-name (upcase (or (and (consp env) (cdr env)
+				    (or (and (consp (cdr env)) (car (cdr env)))
+					(cdr env))) env)))
+	 (alias-name (or (and (consp env) (car env))
+				   (downcase env)))
 	 (env (getenv env-name)))
     (dir-alias alias-name (expand-file-name env))))
 
@@ -225,7 +228,8 @@ When completed, the dir-alias variables if the mode is enabled by
 	       "appdata"
 	       "homepath"
 	       "systemroot"
-	       "localappdata")
+	       "localappdata"
+	       '("h" "ohome"))
 
 (dir-alias "ed" (expand-file-name "~/.emacs.d")
 	   "doc" (expand-file-name "~/Documents")
