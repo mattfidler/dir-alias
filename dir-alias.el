@@ -170,12 +170,20 @@ When completed, the dir-alias variables if the mode is enabled by
     (when dir-alias-mode
       (dir-alias--rebuild-and-enable))))
 
-(defun dir-alias-env (env)
+(defun dir-alias-env--1 (env)
   "Create a directory alias of ENV environmental variable."
   (let* ((env-name (upcase env))
 	 (alias-name (downcase env))
 	 (env (getenv env-name)))
     (dir-alias alias-name (expand-file-name env))))
+
+(defun dir-alias-env (&rest envs)
+  "Setup ENVS using `dir-alias-env--1' on each argument."
+  (let ((args envs))
+    (while args
+      (dir-alias-env--1 (pop args))))
+  (when dir-alias-mode
+      (dir-alias--rebuild-and-enable)))
 
 
 (defun dir-alias-test ()
@@ -207,7 +215,15 @@ When completed, the dir-alias variables if the mode is enabled by
   (dir-alias-subdirs (expand-file-name (expand-file-name (if (getenv "EPDATA") (concat (getenv "EPDATA") "/src/") (concat usb-app-dir "../Data/src/")))))
   (dir-alias-subdirs (expand-file-name (concat usb-app-dir "../Data/start")) '("user" "system" "shared")))
 
-(dir-alias-env "mydoc")
+(dir-alias-env "mydoc"
+	       "temp"
+	       "ProgramData"
+	       "ProgramFiles"
+	       "userprofile"
+	       "appdata"
+	       "homepath"
+	       "systemroot"
+	       "localappdata")
 
 (dir-alias "ed" (expand-file-name "~/.emacs.d")
 	   "doc" (expand-file-name "~/Documents")
