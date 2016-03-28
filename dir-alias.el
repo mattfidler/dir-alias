@@ -154,7 +154,7 @@ When completed, the dir-alias variables if the mode is enabled by
 			      (cons (format "%s"
 					    (if (string-match "^\\(.*?\\)[0-9_.-]*$" x)
 						(match-string 1 x) x)) 
-				    (if (and except (not (string-match (regexp-opt except 'paren) x)))
+				    (if (and except (not (string-match (regexp-opt (append '("."  "..") except) 'paren) x)))
 					(format "%s/"
 						(expand-file-name x dir))
 				      (format "%s/"
@@ -203,6 +203,7 @@ When completed, the dir-alias variables if the mode is enabled by
 	     "pa" (expand-file-name (concat usb-drive-letter "PortableApps"))
 	     "doc" (expand-file-name (concat usb-drive-letter "Documents"))
 	     "doc" (expand-file-name (concat usb-drive-letter "LiberKey/MyDocuments")))
+  (dir-alias-subdirs (expand-file-name (expand-file-name (if (getenv "EPDATA") (concat (getenv "EPDATA") "/src/") (concat usb-app-dir "../Data/src/")))))
   (dir-alias-subdirs (expand-file-name (concat usb-app-dir "../Data/start")) '("user" "system" "shared")))
 
 (dir-alias-env "mydoc")
