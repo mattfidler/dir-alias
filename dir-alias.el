@@ -10,7 +10,7 @@
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 
-;;; Commentary: 
+;;; Commentary:
 ;; 
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -72,7 +72,7 @@
   "Run OPERATION on NAME with ARGS.
 
 Allows the directory aliaes to be used."
-  (dir-alias--real-file-name-handler 
+  (dir-alias--real-file-name-handler
    operation
    (cons (dir-alias--convert-file-name name)
          (if (stringp (car args))
@@ -90,7 +90,7 @@ Allows the directory aliaes to be used."
                   (apply operation args)))
 
 (defun dir-alias--rebuild-and-enable ()
-  "Rebuild `dir-alias-regexp' and enables directory aliases. 
+  "Rebuild `dir-alias-regexp' and enables directory aliases.
 The appropriate line is added to `file-name-handler-alist'."
   (setq dir-alias--convert-file-name (make-hash-table :test 'equal)
 	dir-alias--regexp (format "^~%s[/\\\\]"
@@ -99,7 +99,7 @@ The appropriate line is added to `file-name-handler-alist'."
 				    (lambda(x)
 				      (nth 0 x))
 				    dir-alias--dirs-assoc) 'paren))
-	file-name-handler-alist (remove-if (lambda(x) (eq (cdr x) 'dir-alias--file-name-handler)) file-name-handler-alist)
+	file-name-handler-alist (cl-remove-if (lambda(x) (eq (cdr x) 'dir-alias--file-name-handler)) file-name-handler-alist)
 	file-name-handler-alist (cons `(,dir-alias--regexp . dir-alias--file-name-handler) file-name-handler-alist)
 	directory-abbrev-alist `((,(dir-alias--ensure-last-slash (expand-file-name (getenv "HOME"))) . "~/")
 				 ,@(mapcar
@@ -113,7 +113,7 @@ The appropriate line is added to `file-name-handler-alist'."
   (if dir-alias-mode
       (dir-alias--rebuild-and-enable)
     (setq file-name-handler-alist
-	  (remove-if (lambda(x) (eq (cdr x) 'dir-alias--file-name-handler)) file-name-handler-alist)
+	  (cl-remove-if (lambda(x) (eq (cdr x) 'dir-alias--file-name-handler)) file-name-handler-alist)
 	  directory-abbrev-alist nil)))
 
 (defun dir-alias--2 (alias directory)
@@ -130,7 +130,7 @@ These aliaes are only honored in Emacs."
 (defun dir-alias (&rest alias-syntax)
   "Create an alias for directories using ALIAS-SYNTAX.
 
-The aliases can be specified as a group of arguments consising of 
+The aliases can be specified as a group of arguments consising of
 ALIAS DIRECTORY or ALIAS-LIST DIRECTORY.
 
 This wrapper function then sends the 2 arguments to `dir-alias--2'.
@@ -153,13 +153,13 @@ When completed, the dir-alias variables if the mode is enabled by
 			    (lambda(x)
 			      (cons (format "%s"
 					    (if (string-match "^\\(.*?\\)[0-9_.-]*$" x)
-						(match-string 1 x) x)) 
+						(match-string 1 x) x))
 				    (if (and except (not (string-match (regexp-opt (append '("."  "..") except) 'paren) x)))
 					(format "%s/"
 						(expand-file-name x dir))
 				      (format "%s/"
 					      (expand-file-name x dir)))))
-			    (remove-if
+			    (cl-remove-if
 			     (lambda(x)
 			       (or (not (file-directory-p (expand-file-name x dir)))
 				   (string-match (format "^%s$"
@@ -186,6 +186,7 @@ When completed, the dir-alias variables if the mode is enabled by
 		   (expand-file-name (concat test "dummy")) (abbreviate-file-name (concat (expand-file-name test) "dummy"))))
 	(mapcar (lambda(x) (concat "~" (car x) "/")) dir-alias--dirs-assoc)))
 
+(defvar usb-drive-letter)
 (when (boundp 'usb-app-dir)
   (dir-alias "ep" (expand-file-name (concat usb-app-dir "../"))
 	     "site-lisp" (expand-file-name (concat usb-app-dir "site-lisp/"))
@@ -218,26 +219,27 @@ When completed, the dir-alias variables if the mode is enabled by
 
 (dir-alias-subdirs (expand-file-name "~/.emacs.d") '("eshell" "url" "var"))
 
+(defvar recentf-filename-handlers)
 ;;; FIXME elpa el-get yasnippet
 (setq recentf-filename-handlers (quote (abbreviate-file-name)))
 
 
 (defadvice file-readable-p (around emacs-portable-advice activate)
-  "This advice keeps Emacs from trying to call tramp on c:/ and othe windows-type files when running Mac OSX."
+  "Ignore c:/ files on Mac OSX."
   (if (and (eq system-type 'darwin)
              (save-match-data
                (string-match "^[A-Za-z]:[/\\]" (nth 0 (ad-get-args 0))))) nil
     ad-do-it))
 
 (defadvice file-remote-p (around emacs-portable-advice activate)
-  "This advice keeps Emacs from assuming that c:\ is a remote file and trying to connect to a remote that doesn't exist."
+  "Ignore c:/ files on Mac OSX."
   (if (and (eq system-type 'darwin)
            (save-match-data
              (string-match "^[A-Za-z]:[/\\]" (nth 0 (ad-get-args 0))))) t
     ad-do-it))
 
 (defadvice file-exists-p (around emacs-portable-advice activate)
-  "This advice keeps Emacs from trying to call tramp on c:/ and othe windows-type files when running Mac OSX."
+  "Ignore c:/ files on Mac OSX."
   (if (and (eq system-type 'darwin)
            (save-match-data
              (string-match "^[A-Za-z]:[/\\]" (nth 0 (ad-get-args 0))))) nil
