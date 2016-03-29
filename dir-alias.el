@@ -131,14 +131,14 @@ The alias will be ~alias/ to refer to the full directory.
 These aliaes are only honored in Emacs."
   (if (consp alias)
       (dolist (a alias)
-	(dir-alias a directory force))
+	(dir-alias--2 a directory force))
     (let (tmp)
-      (when (file-exists-p directory)
+      (when (and directory (file-exists-p directory))
 	(when (and force (assoc alias dir-alias--dirs-assoc))
 	  (dolist (elt dir-alias--dirs-assoc)
 	    (unless (equal (car elt) alias)
 	      (push elt tmp)))
-	  (setq dir-alias--dirs-assoc (cl-reverse tmp)))
+	  (setq dir-alias--dirs-assoc (reverse tmp)))
 	(unless (assoc alias dir-alias--dirs-assoc)
 	  (push (cons alias directory) dir-alias--dirs-assoc))))))
 
@@ -161,6 +161,7 @@ When completed, the dir-alias variables if the mode is enabled by
     (while args
       (setq arg1 (pop args)
 	    arg2 (and args (pop args)))
+      (message "%s->%s" arg1 arg2)
       (dir-alias--2 arg1 arg2 force)))
   (when dir-alias-mode
     (dir-alias--rebuild-and-enable)))
@@ -177,7 +178,21 @@ When completed, the dir-alias variables if the mode is enabled by
 `dir-alias--rebuild-and-enable'.
 
 If the alias already exists, overwrite the alias."
-  (dir-alias-- t alias-syntax))
+  (apply #'dir-alias-- t alias-syntax))
+
+(defun dir-alias (&rest alias-syntax)
+  "Create an alias for directories using ALIAS-SYNTAX.
+
+The aliases can be specified as a group of arguments consising of
+ALIAS DIRECTORY or ALIAS-LIST DIRECTORY.
+
+This wrapper function then sends the arguments to `dir-alias--'.
+
+When completed, the dir-alias variables if the mode is enabled by
+`dir-alias--rebuild-and-enable'.
+
+If the alias already exists, overwrite the alias."
+  (apply #'dir-alias-- nil alias-syntax))
 
 (defun dir-alias-subdirs (dir &optional except)
   "Alias subdirectories of DIR, with the exception of EXCEPT directories."
@@ -241,7 +256,7 @@ The ENVS arguments are sent to `dir-alias-env--1'."
 The ENVS arguments are sent to `dir-alias-env--1'.
 
 If an alias already exists, don't add this new alias."
-   (dir-alias-env-- nil envs))
+   (apply #'dir-alias-env-- nil envs))
 
 (defun dir-alias-env-force (&rest envs)
   "Setup environment aliases.
@@ -249,7 +264,7 @@ If an alias already exists, don't add this new alias."
 The ENVS arguments are sent to `dir-alias-env--1'.
 
 If an alias already exists, overwrite it with this alias."
-  (dir-alias-env-- t envs))
+  (apply #'dir-alias-env-- t envs))
 
 (defun dir-alias-test ()
   "Test directory aliases."
