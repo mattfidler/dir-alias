@@ -86,8 +86,8 @@ Allows the directory aliaes to be used."
 	 (cons 'dir-alias--file-name-handler
 	       (and (eq inhibit-file-name-operation operation)
 		    inhibit-file-name-handlers)))
-                      (inhibit-file-name-operation operation))
-                  (apply operation args)))
+	(inhibit-file-name-operation operation))
+    (apply operation args)))
 
 (defun dir-alias--rebuild-and-enable ()
   "Rebuild `dir-alias-regexp' and enables directory aliases.
@@ -121,19 +121,33 @@ The appropriate line is added to `file-name-handler-alist'."
 	  (cl-remove-if (lambda(x) (eq (cdr x) 'dir-alias--file-name-handler)) file-name-handler-alist)
 	  directory-abbrev-alist nil)))
 
-(defun dir-alias--2 (alias directory)
+(defun dir-alias--2 (alias directory &optional force)
   "Create an ALIAS for DIRECTORY.
+
+When FORCE is non-nil, overwrite any prior alias.
+
 The alias will be ~alias/ to refer to the full directory.
+
 These aliaes are only honored in Emacs."
   (if (consp alias)
       (dolist (a alias)
-	(dir-alias a directory))
-    (when (file-exists-p directory)
-      (unless (assoc alias dir-alias--dirs-assoc)
-	(push (cons alias directory) dir-alias--dirs-assoc)))))
+	(dir-alias a directory force))
+    (let (tmp)
+      (when (file-exists-p directory)
+	(when (and force (assoc alias dir-alias--dirs-assoc))
+	  (dolist (elt dir-alias--dirs-assoc)
+	    (unless (equal (car elt) alias)
+	      (push elt tmp)))
+	  (setq dir-alias--dirs-assoc (cl-reverse tmp)))
+	(unless (assoc alias dir-alias--dirs-assoc)
+	  (push (cons alias directory) dir-alias--dirs-assoc))))))
 
-(defun dir-alias (&rest alias-syntax)
-  "Create an alias for directories using ALIAS-SYNTAX.
+(defun dir-alias-- (force &rest alias-syntax)
+  "Create an alias.
+
+When FORCE is non-nil, overwrite any prior aliases.
+
+The rest of the arguments are specified with ALIAS-SYNTAX.
 
 The aliases can be specified as a group of arguments consising of
 ALIAS DIRECTORY or ALIAS-LIST DIRECTORY.
@@ -147,9 +161,23 @@ When completed, the dir-alias variables if the mode is enabled by
     (while args
       (setq arg1 (pop args)
 	    arg2 (and args (pop args)))
-      (dir-alias--2 arg1 arg2)))
+      (dir-alias--2 arg1 arg2 force)))
   (when dir-alias-mode
     (dir-alias--rebuild-and-enable)))
+
+(defun dir-alias-force (&rest alias-syntax)
+  "Create an alias for directories using ALIAS-SYNTAX.
+
+The aliases can be specified as a group of arguments consising of
+ALIAS DIRECTORY or ALIAS-LIST DIRECTORY.
+
+This wrapper function then sends the arguments to `dir-alias--'.
+
+When completed, the dir-alias variables if the mode is enabled by
+`dir-alias--rebuild-and-enable'.
+
+If the alias already exists, overwrite the alias."
+  (dir-alias-- t alias-syntax))
 
 (defun dir-alias-subdirs (dir &optional except)
   "Alias subdirectories of DIR, with the exception of EXCEPT directories."
@@ -175,24 +203,53 @@ When completed, the dir-alias variables if the mode is enabled by
     (when dir-alias-mode
       (dir-alias--rebuild-and-enable))))
 
-(defun dir-alias-env--1 (env)
-  "Create a directory alias of ENV environmental variable."
+(defun dir-alias-env--1 (env force)
+  "Create a directory alias of ENV environmental variable.
+
+When FORCE is non-nil, overwrite any previously defined alias.
+
+ENV can be an environment variable, like TEMP which would then
+have an alias of ~temp/
+
+ENV can also be a list (\"alias\" \"Env\"), so
+'(\"tmp\" \"TEMP\") would create a ~tmp/ alias for the TEMP directory."
   (let* ((env-name (upcase (or (and (consp env) (cdr env)
 				    (or (and (consp (cdr env)) (car (cdr env)))
 					(cdr env))) env)))
 	 (alias-name (or (and (consp env) (car env))
-				   (downcase env)))
+			 (downcase env)))
 	 (env (getenv env-name)))
-    (dir-alias alias-name (expand-file-name env))))
+    (if force
+	(dir-alias-force alias-name (expand-file-name env))
+      (dir-alias alias-name (expand-file-name env)))))
 
-(defun dir-alias-env (&rest envs)
-  "Setup ENVS using `dir-alias-env--1' on each argument."
+(defun dir-alias-env-- (force &rest envs)
+  "Setup environment aliases.
+
+When FORCE is non-nil, overwrite any alias.
+
+The ENVS arguments are sent to `dir-alias-env--1'."
   (let ((args envs))
     (while args
-      (dir-alias-env--1 (pop args))))
+      (dir-alias-env--1 (pop args) force)))
   (when dir-alias-mode
-      (dir-alias--rebuild-and-enable)))
+    (dir-alias--rebuild-and-enable)))
 
+(defun dir-alias-env (&rest envs)
+   "Setup environment aliases.
+
+The ENVS arguments are sent to `dir-alias-env--1'.
+
+If an alias already exists, don't add this new alias."
+   (dir-alias-env-- nil envs))
+
+(defun dir-alias-env-force (&rest envs)
+  "Setup environment aliases.
+
+The ENVS arguments are sent to `dir-alias-env--1'.
+
+If an alias already exists, overwrite it with this alias."
+  (dir-alias-env-- t envs))
 
 (defun dir-alias-test ()
   "Test directory aliases."
@@ -213,7 +270,7 @@ When completed, the dir-alias variables if the mode is enabled by
 	     "other" (expand-file-name (expand-file-name (concat usb-app-dir "../Other/")))
 	     "start" (expand-file-name (expand-file-name (concat usb-app-dir "../Data/start/")))
 	     "ini" (expand-file-name (expand-file-name (if (getenv "EPDATA") (concat (getenv "EPDATA") "/ini/")
-							     (concat usb-app-dir "../Data/ini/"))))
+							 (concat usb-app-dir "../Data/ini/"))))
 	     "src" (expand-file-name (expand-file-name (if (getenv "EPDATA") (concat (getenv "EPDATA") "/src/")
 							 (concat usb-app-dir "../Data/src/"))))
 	     "usb" usb-drive-letter
@@ -240,7 +297,6 @@ When completed, the dir-alias variables if the mode is enabled by
 
 (dir-alias "ed" (expand-file-name "~/.emacs.d")
 	   "doc" (expand-file-name "~/Documents")
-	   "db" (expand-file-name "db")
 	   "git" (expand-file-name "~/git")
 	   "git" (expand-file-name "~/github")
 	   "org" (expand-file-name "~/org"))
@@ -249,15 +305,28 @@ When completed, the dir-alias variables if the mode is enabled by
 (dir-alias-subdirs (expand-file-name "~/.emacs.d") '("eshell" "url" "var"))
 
 (defvar recentf-filename-handlers)
-;;; FIXME elpa el-get yasnippet
+
+(defun dir-alias-after-startup ()
+  "Setup aliases after startup."
+  (when (and (boundp 'package-user-dir) (file-exists-p package-user-dir))
+    (dir-alias-force "elpa" (expand-file-name package-user-dir)))
+  (when (and (boundp 'el-get-dir) (file-exists-p el-get-dir))
+    (dir-alias-force "el-get" (expand-file-name el-get-dir)))
+  (when (boundp 'yas/snippet-dirs)
+    (let ((snips (if (listp yas/snippet-dirs)
+		     (nth 0 yas/snippet-dirs)
+		   yas/snippet-dirs)))
+      (when (file-exists-p snips)
+	(dir-alias-force '("snips" "snip" "snippets" "snippet") snips)))))
+
+(add-hook 'emacs-startup-hook #'dir-alias-after-startup)
+
 (setq recentf-filename-handlers (quote (abbreviate-file-name)))
-
-
 (defadvice file-readable-p (around emacs-portable-advice activate)
   "Ignore c:/ files on Mac OSX."
   (if (and (eq system-type 'darwin)
-             (save-match-data
-               (string-match "^[A-Za-z]:[/\\]" (nth 0 (ad-get-args 0))))) nil
+	   (save-match-data
+	     (string-match "^[A-Za-z]:[/\\]" (nth 0 (ad-get-args 0))))) nil
     ad-do-it))
 
 (defadvice file-remote-p (around emacs-portable-advice activate)
