@@ -1,12 +1,21 @@
 #+TITLE: dir-alias: Create emacs specific directory shortcuts
 #+AUTHOR: Matthew L. Fidler
+* Package motivation
 
-This was originally made for EmacsPortable.App, and used to help
-figure out the correct directories between operating systems because
-the usb drive gets mounted to different places. It is a convenient
-shortcut facility for directories.
+This was originally made for EmacsPortable.App.  EmacsPortable.App
+runs emacs off a usb or removable drive.  When running an application
+off the USB drive, the directories will change based on the system
+running. For example, the usb may be on =/Volumes/USB/= or
+=/mnt/hda1/= or =e:/=.  To make things consistent between platforms,
+this package creates abbreviated file names that should be consistent
+between every platform.  In each case, this would be abbreviated to
+=~usb/=.
+
+After using this for some time, I found the abbreviations useful for
+many directories, and thought that others may also like the directory
+shortcuts.
    
-* EmcasPortable.App specific shortcuts
+* EmacsPortable.App specific shortcuts
 When using EmacsPortable.App, the following directories aliaes are setup:
 |-------------+------------------------------+-------------------------------------|
 | Alias       | True Directory               | Directory Purpose                   |
@@ -29,22 +38,66 @@ When using EmacsPortable.App, the following directories aliaes are setup:
 
 In addition to these aliases, the following aliases are also defined:
 
+- All the directories in =~src/= are expanded into abbreviations.  For
+  example, if you had =dir-alias= in =~src/=, the overall alias would
+  be =~dir-alias/=
 
-*  General shortcuts
-Other aliases are added =~el-get/package/elpa= is changed to =~elpa=, as
-if it were a symbolic link.  Since symbolic links are not supported in
-windows, this is handled by emacs only.  This was implemented to allow
-files to remain the same between file systems.  =~usb/= will be the
-same on every system.
+* General shortcuts
+With or without EmacsPortable.App, the following aliases are added:
+|----------+-----------------------------+-------------------------------------------|
+| Alias    | True Directory              | Directory Purpose                         |
+|----------+-----------------------------+-------------------------------------------|
+| ~ed/     | ~/.emacs.d/                 | Emacs Settings Directory                  |
+| ~doc/    | ~/Documents                 | User Documents directory                  |
+| ~el-get/ | el-get package directory    | Main el-get package directory             |
+| ~snip/   | main yasnippet directory    | Root directory of user-defined yasnippets |
+| ~git/    | ~/git or ~/github directory | Repository of git files                   |
+| ~org/    | ~/org directory             | ~org root                                 |
+|----------+-----------------------------+-------------------------------------------|
+* Creating your own aliases
+Aliases can be created from environmental variables, or specifying
+them in your startup 
+** Environmental variable aliases 
+You can setup variable aliases easily by just specifying them in
+=dir-alias-env=.  For example, =dir-alias= sets up the following aliaeses.
+#+BEGIN_SRC emacs-lisp
+  (dir-alias-env "mydoc"
+                 "temp"
+                 "ProgramData"
+                 '("pd" "ProgramData")
+                 "ProgramFiles"
+                 '("pf" "ProgramFiles")
+                 "userprofile"
+                 '("up" "userprofile")
+                 "appdata"
+                 ;; "homepath"
+                 "systemroot"
+                 '("win" "systemroot")
+                 "localappdata"
+                 '("h" "ohome"))
+#+END_SRC
 
-In addition to these aliases, the following aliases are also defined:
+For all specified environmental variables as strings, like "mydoc" or
+"temp":
+- dir-alias makes sure the environmental variable specifies a
+  directory
+- If the environmental variable specifies a directory, setup an alias 
+  for the environmental variable based on its name. For example
+  "mydoc" would be aliased to =~mydoc/=.
 
-- =~el-get=, is an alias for the el-get package directory
-- =~elpa=, is an alias for the user elpa package directory
-- =~theme= or =~themes=, is an alias for the emacs24 themes directory,
-  (as long as the themes directory is /not/ the =user-emacs-directory=).
-- =~snip=, =~snips=, =~snippets=, =~snippet=, is an alias for
-  yasnippets snippets.
-- All the startup scripts in =Data/start= have an alias created for them.
+When the argument is a list instead, the first string represents the
+alias, and the second string represents the file environmental
+variable.  For example ='("h" "ohome")= says that if there is an
+enviromental variable =OHOME= that has a directory that exists, setup
+the alias =~h/= to access that directory.
+
+Whenever an alias already exists, ignore the new alias when using
+=dir-alias-env=.  If you wish to overwrite any alias, you need to use
+=dir-alias-env-force=.
+
+Note that these alias are setup at the time =dir-alias= is loaded. If
+these environmental variables change, they are not updated in =dir-alias=.
+** Manual aliases
+Write me...
 
 
