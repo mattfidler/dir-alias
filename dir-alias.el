@@ -161,7 +161,6 @@ When completed, the dir-alias variables if the mode is enabled by
     (while args
       (setq arg1 (pop args)
 	    arg2 (and args (pop args)))
-      (message "%s->%s" arg1 arg2)
       (dir-alias--2 arg1 arg2 force)))
   (when dir-alias-mode
     (dir-alias--rebuild-and-enable)))
